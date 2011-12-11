@@ -2,8 +2,6 @@
 #ifndef ROUTING_H_
 #define ROUTING_H_
 
-#include "http_request.h"
-
 #include <string>
 #include <list>
 
