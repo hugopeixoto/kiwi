@@ -1,0 +1,5 @@
+# kiwi, a c++ web mvc framework.
+
+This is a web framework, based on the ruby on rails design, in C++.
+Because everybody loves C++.
+
