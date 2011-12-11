@@ -172,6 +172,7 @@ std::string Parser::percent_decode (const std::string& a_string)
         hex_value[a_string[i+1]] >= 0 &&
         hex_value[a_string[i+2]] >= 0) {
       result += (hex_value[a_string[i + 1]] << 4) | (hex_value[a_string[i + 2]]);
+      i += 2;
     } else {
       result += a_string[i];
     }
