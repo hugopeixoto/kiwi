@@ -61,8 +61,11 @@ namespace kiwi {
     template<typename T>
     const T& Parameters::get (const std::string& a_name) const
     {
+      static T default_value;
+
       std::map<std::string, Parameter*>::const_iterator it = params_.find(a_name);
       if (it == params_.end()) {
+        return default_value;
       }
       return ((const TemplatedParameter<T>*)it->second)->value();
     }

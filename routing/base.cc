@@ -3,16 +3,33 @@
 #include "routing/match.h"
 #include "http/method.h"
 
+#include <boost/regex.hpp>
+#include <iomanip>
+#include <vector>
+
 using kiwi::routing::Base;
 
 namespace kiwi { namespace routing {
 struct Rule {
   http::Method method;
-  std::string  match;
+  boost::regex match;
   std::string  controller;
   std::string  action;
+  std::vector<std::string> symbols;
 };
 } }
+
+std::string regex_escape(const std::string& string_to_escape)
+{
+  static const boost::regex re_boostRegexEscape("[\\^\\.\\$\\|\\(\\)\\[\\]\\*\\+\\?\\/\\\\]");
+  const std::string replace_by("\\\\\\1&");
+  return regex_replace(
+    string_to_escape,
+    re_boostRegexEscape,
+    replace_by,
+    boost::regex_constants::match_default | boost::regex_constants::format_sed);
+}
+
 
 Base::~Base ()
 {
@@ -53,11 +70,28 @@ Base& Base::map (
     const std::string& a_controller,
     const std::string& a_action)
 {
-  Rule* r = new Rule();
-  r->method = a_method;
-  r->match = a_match;
+  std::string escaped = regex_escape(a_match);
+  static const boost::regex re_symbols(":([a-zA-Z0-9_]+)");
+  static const std::string replace_by("(?<\\1>[^./]+)");
+
+  Rule* r       = new Rule();
+  r->method     = a_method;
   r->controller = a_controller;
-  r->action = a_action;
+  r->action     = a_action;
+  r->match      = regex_replace(
+                    a_match,
+                    re_symbols,
+                    replace_by,
+                    boost::regex_constants::match_default | boost::regex_constants::format_sed);
+
+  std::cerr << "routing rule: " << std::setw(42) << a_match << " generated: " << r->match << std::endl;
+
+  boost::sregex_iterator re_it(a_match.begin(), a_match.end(), re_symbols);
+  boost::sregex_iterator end;
+
+  for (; re_it != end; ++re_it) {
+    r->symbols.push_back((*re_it)[1].str());
+  }
 
   rules_.push_back(r);
   return *this;
@@ -70,27 +104,18 @@ bool Base::match (
     const std::string& a_uri,
     Match& a_match)
 {
+  boost::match_results<std::string::const_iterator> mr;
+
   for (Rule* rule : rules_) {
-    if (a_method == rule->method && a_uri == rule->match) {
+    if (a_method == rule->method && boost::regex_match(a_uri, mr, rule->match)) {
       a_match.controller = rule->controller;
       a_match.action = rule->action;
+      for (const std::string& symbol : rule->symbols) {
+        a_match.parameters[symbol] = mr[symbol];
+      }
       return true;
     }
   }
-#if 0
-  boost::match_results<std::string::const_iterator> mr;
-  for (std::list<rule*>::iterator it = rules_.begin(); it != rules_.end(); ++it) {
-    const rule& r = **it;
-    if (a_method == r.match.method && boost::regex_match(a_uri, mr, *r.regex)) {
-      a_match.controller = r.match.controller;
-      a_match.action     = r.match.action;
-      a_match.method     = r.match.method;
-      std::cout << "matches " << mr.size() << std::endl;
-
-      return true;
-    }
-  }
-#endif
 
   return false;
 }

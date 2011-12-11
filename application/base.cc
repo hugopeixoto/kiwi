@@ -45,15 +45,16 @@ void kiwi::application::Base::run (uint16_t a_port)
           routing_match.controller.c_str(),
           routing_match.action.c_str());
 
-        //for (std::map<std::string, std::string>::const_iterator it = rm.params.begin(); it != rm.params.end(); ++it) {
-        //  printf("::: QS [%s]=[%s]\n", it->first.c_str(), it->second.c_str());
-        //}
+        for (std::map<std::string, std::string>::const_iterator it = routing_match.parameters.begin(); it != routing_match.parameters.end(); ++it) {
+          printf("::: QS [%s]=[%s]\n", it->first.c_str(), it->second.c_str());
+        }
 
         if (controller_engine_->execute(
               *request,
               *response,
               routing_match.controller,
-              routing_match.action) == false) {
+              routing_match.action,
+              routing_match.parameters) == false) {
           printf("Controller/action missing\n");
         }
       }

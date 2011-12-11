@@ -35,7 +35,8 @@ namespace kiwi {
       bool execute (
         const http::Request& a_request,
         http::Response& a_response,
-        const std::string& a_action);
+        const std::string& a_action,
+        const std::map<std::string, std::string>& a_params);
 
       /**
        * Getters / Setters
