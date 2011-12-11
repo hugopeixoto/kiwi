@@ -19,6 +19,8 @@ namespace kiwi {
 
       bool pop_request (Request*& a_request);
 
+      static std::string percent_decode (const std::string& a_string);
+
       /**
        * Not so public member functions
        */

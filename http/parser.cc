@@ -16,9 +16,31 @@ static std::string extract_query_string (
   const std::string& a_uri, 
   std::map<std::string, std::string>& a_params);
 
+char hex_value[] = {
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1,
+  -1,0xA,0xB,0xC,0xD,0xE, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+};
+
 typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
 typedef int (*http_cb) (http_parser*);
 
+/**
+ * top level parsing functions
+ */
 int on_message_begin (http_parser* a_parser)
 {
   return static_cast<Parser*>(a_parser->data)->on_message_begin();
@@ -139,6 +161,25 @@ int Parser::on_body (const char* a_buffer, size_t a_length)
   return 0;
 }
 
+std::string Parser::percent_decode (const std::string& a_string)
+{
+  std::string result;
+  result.reserve(a_string.size());
+
+  for (size_t i = 0; i < a_string.size(); ++i) {
+    if (a_string[i] == '%' &&
+        (i + 2) < a_string.size() &&
+        hex_value[a_string[i+1]] >= 0 &&
+        hex_value[a_string[i+2]] >= 0) {
+      result += (hex_value[a_string[i + 1]] << 4) | (hex_value[a_string[i + 2]]);
+    } else {
+      result += a_string[i];
+    }
+  }
+
+  return result;
+}
+
 std::string extract_query_string (
     const std::string& a_uri,
     std::map<std::string, std::string>& a_params)
@@ -153,19 +194,19 @@ std::string extract_query_string (
     for (size_t i = 0; i < qs.size();) {
       size_t j = qs.find_first_of("&=", i);
       if (j == std::string::npos) {
-        a_params[qs.substr(i)] = "";
+        a_params[Parser::percent_decode(qs.substr(i))] = "";
         i = qs.size();
       } else {
         if (qs[j] == '&') {
-          a_params[qs.substr(i, j - i)] = "";
+          a_params[Parser::percent_decode(qs.substr(i, j - i))] = "";
           i = j + 1;
         } else {
           size_t k = qs.find_first_of("&", j + 1);
           if (k == std::string::npos) {
-            a_params[qs.substr(i, j - i)] = qs.substr(j + 1);
+            a_params[Parser::percent_decode(qs.substr(i, j - i))] = Parser::percent_decode(qs.substr(j + 1));
             i = qs.size();
           } else {
-            a_params[qs.substr(i, j - i)] = qs.substr(j + 1, k - (j + 1));
+            a_params[Parser::percent_decode(qs.substr(i, j - i))] = Parser::percent_decode(qs.substr(j + 1, k - (j + 1)));
             i = k + 1;
           }
         }
@@ -175,5 +216,4 @@ std::string extract_query_string (
 
   return results["ABS_PATH"].str();
 }
-
 
