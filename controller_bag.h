@@ -1,24 +1,31 @@
 
-#ifndef ABSTRACT_BAG_H_
-#define ABSTRACT_BAG_H_
+#ifndef KIWI_CONTROLLER_ENGINE_H_
+#define KIWI_CONTROLLER_ENGINE_H_
 
 #include <string>
 #include <map>
 
-class http_request;
-class abstract_controller;
 namespace kiwi {
-  namespace controllers {
+  namespace http {
+    class Request;
+  }
+
+  namespace controller {
+    class Base;
+
     class Engine {
       public:
-      void add (abstract_controller*);
-      bool execute (const http_request*, const std::string&, const std::string&);
+      void add (Base* a_base);
+      bool execute (
+          const http::Request&,
+          const std::string& a_controller,
+          const std::string& a_action);
 
       protected:
-      std::map<std::string, abstract_controller*> controllers_;
+      std::map<std::string, Base*> controllers_;
     };  
   }
 }
 
-#endif // ABSTRACT_BAG_H_
+#endif // KIWI_CONTROLLER_ENGINE_H_
 

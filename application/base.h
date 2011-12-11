@@ -2,6 +2,8 @@
 #ifndef KIWI_APPLICATION_BASE_H_
 #define KIWI_APPLICATION_BASE_H_
 
+#include <stdint.h>
+
 namespace kiwi { namespace routing { class Base; } }
 namespace kiwi { namespace controller { class Base; } }
 namespace kiwi { namespace controller { class Engine; } }

@@ -20,13 +20,13 @@ namespace kiwi {
       /**
        * @brief Blocks until there is a request to serve, or the server fails.
        */
-      bool begin (Request& a_request, Response& a_response);
+      bool begin (Request*& a_request, Response*& a_response);
 
       /**
        * @brief Finishes the request/response workflow.
        * This flushes the output and frees all request associated resources.
        */
-      bool end (Request& a_request, Response& a_response);
+      bool end (Request*& a_request, Response*& a_response);
 
       protected:
       int server_socket_; //!< file descriptor of the listener socket.

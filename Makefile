@@ -1,17 +1,27 @@
-LIBRARY=libkiwi.a
+LIBRARY=bin/libkiwi.a
+ECC=bin/ecc
 
-SRCS=helpers/core.cc recko.cc
+CXXFLAGS=-std=c++0x -I . -I ../http-parser
 
-OBJS=$(patsubst %.cc, %.o,$(SRCS))
+HTTP_SRCS=http/server.cc http/request.cc http/response.cc http/parser.cc ../http-parser/http_parser.c
+SRCS=helpers/core.cc routing/base.cc application/base.cc controller/base.cc controller/engine.cc view/parameters.cc $(HTTP_SRCS)
 
-all: $(LIBRARY)
+OBJS=$(patsubst %.cc, %.o,$(patsubst %.c, %.o,$(SRCS)))
+
+all: $(LIBRARY) $(ECC)
 
 depend: .depend
 .depend: $(SRCS)
 	rm -f ./.depend
-	$(CC) $(CFLAGS) -MM $^ >> ./.depend;
+	$(CC) $(CXXFLAGS) -MM $^ >> ./.depend;
 include .depend
 
 $(LIBRARY): $(OBJS)
 	ar r $(LIBRARY) $(OBJS)
 
+
+ecc/ecc.c: ecc/ecc.yy
+	flex -o $@ $<
+
+bin/ecc: ecc/ecc.o
+	g++ -o $@ $< -lfl

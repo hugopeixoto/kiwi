@@ -1,24 +1,54 @@
 #ifndef KIWI_HTTP_PARSER_H_
 #define KIWI_HTTP_PARSER_H_
 
+#include <string>
+
+#include "http/request.h"
+
 namespace kiwi {
   namespace http {
-    class Request;
-
-    enum class Status {
-      ERROR,
-      INCOMPLETE,
-      COMPLETE
-    };
-
     class Parser {
-      public:
-      void begin (Request& a_request);
+      protected:
+      typedef void* http_parser_settings_ptr;
+      typedef void* http_parser_ptr;
 
-      Status feed (const char* a_buffer, size_t a_size);
+      public:
+      Parser ();
+
+      bool feed (const char* a_buffer, size_t a_size);
+
+      bool pop_request (Request*& a_request);
+
+      /**
+       * Not so public member functions
+       */
+      public:
+      int on_message_begin ();
+      int on_message_complete ();
+      int on_headers_complete ();
+
+      int on_url (const char* a_buffer, size_t a_length);
+      int on_header_field (const char* a_buffer, size_t a_length);
+      int on_header_value (const char* a_buffer, size_t a_length);
+      int on_body (const char* a_buffer, size_t a_length);
 
       protected:
-      Request* request_;
+      Request& current_request ();
+
+      /**
+       * Member variables
+       */
+      protected:
+      Request requests_[10];
+      int first_request_;
+      int total_requests_;
+      int completed_requests_;
+
+      std::string buffer_;
+      int extra_state_;
+
+      http_parser_settings_ptr settings_;
+      http_parser_ptr parser_;
     };
   }
 }

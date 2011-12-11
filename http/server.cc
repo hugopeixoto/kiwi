@@ -33,40 +33,50 @@ Server::Server (uint16_t a_port)
   parser_ = new Parser();
 }
 
-bool Server::begin (Request& a_request, Response& a_response)
+bool Server::begin (Request*& a_request, Response*& a_response)
 {
   char buffer[4096];
   int received;
   int client_socket;
+
+  a_request = NULL;
+  a_response = NULL;
   
   client_socket = accept(server_socket_, NULL, NULL);
   if (client_socket < 0) {
+    close(server_socket_);
     return false;
   }
 
-  // parse request
-  parser_->begin(a_request);
-  Status status = Status::INCOMPLETE;
+  while (true) {
+    // Not really a select loop
+    // oh we've got a read event on client_socket wowie
 
-  while (status == Status::INCOMPLETE && (received = recv(client_socket, buffer, 4096, 0)) > 0) {
-    status = parser_->feed(buffer, received);
+    received = recv(client_socket, buffer, sizeof(buffer), 0);
+    if (received < 0) {
+      close(client_socket);
+      return true;
+    }
+
+    if (parser_->feed(buffer, received) == false) {
+      close(client_socket);
+      return true;
+    }
+
+    if (parser_->pop_request(a_request)) {
+      a_response = new Response();
+      a_response->set_socket(client_socket);
+      return true;
+    }
   }
-
-  if (status != Status::COMPLETE) {
-    // Reply with a 400 Bad Request.
-    close(client_socket);
-    return false;
-  }
-
-  // setup response
-  a_response.set_socket(client_socket);
-  close(client_socket);
 
   return true;
 }
 
-bool Server::end (Request& a_request, Response& a_response)
+bool Server::end (Request*& a_request, Response*& a_response)
 {
+  close(a_response->socket());
+  delete a_response;
   return true;
 }
 
