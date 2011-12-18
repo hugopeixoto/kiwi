@@ -5,6 +5,27 @@
 #include <string>
 #include <sstream>
 
+#include "model/base.h"
+
+namespace kiwi {
+  namespace helpers {
+    template<typename Model>
+    std::string path (const Model* a_object)
+    {
+      std::ostringstream sout;
+      sout << "/" << Model::model_name_ << "s/" << a_object->id();
+      return sout.str();
+    }
+
+    template<typename Model>
+    std::string link_to (const std::string& a_text, const Model* a_object) {
+      std::ostringstream sout;
+      sout << "<a href='" << path(a_object) << "'>" << a_text << "</a>";
+      return sout.str();
+    }
+  }
+}
+
 template<typename T>
 std::string html_escape (const T& a_value)
 {
