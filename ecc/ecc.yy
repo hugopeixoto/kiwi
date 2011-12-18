@@ -56,7 +56,7 @@ void printCpp(const char* str) { printf("%s", str); }
 int main(int argc, char * argv[])
 {
   printf("#include <iostream>\n#include <view/parameters.h>\n");
-  printf("void view_%s_%s(std::ostream& out, const kiwi::view::Parameters& params) {\n", argv[1], argv[2]);
+  printf("static void view_%s_%s(std::ostream& out, const kiwi::view::Parameters& params) {\n", argv[1], argv[2]);
   yylex();
   printf("}\n");
   return 0;
