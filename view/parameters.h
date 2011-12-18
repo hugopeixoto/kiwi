@@ -11,14 +11,19 @@ namespace kiwi {
     class Parameters {
       public:
 
-      template<typename T>
+      template<typename T=std::string>
       void set (const std::string& a_name, const T&& a_value);
 
-      template<typename T>
+      template<typename T=std::string>
       void set (const std::string& a_name, const T& a_value);
 
-      template<typename T>
+      template<typename T=std::string>
       const T& get (const std::string& a_name) const;
+
+      const std::string& operator[] (const std::string& a_name) const
+      {
+        return get<std::string>(a_name);
+      }
 
       void clear ();
 
