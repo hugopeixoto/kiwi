@@ -10,6 +10,10 @@ Base::Base (const std::string& a_name)
   name_ = a_name;
 }
 
+Base::~Base ()
+{
+}
+
 bool Base::execute (
     const http::Request& a_request,
     http::Response& a_response,

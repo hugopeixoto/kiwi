@@ -32,6 +32,8 @@ namespace kiwi {
 
       const http::Method& method () const;
 
+      void set_method (const http::Method& a_method);
+
       const_map<std::string, std::string> params;
 
       void clear ();
@@ -49,6 +51,11 @@ namespace kiwi {
     inline const http::Method& Request::method () const
     {
       return method_;
+    }
+
+    inline void Request::set_method (const http::Method& a_method)
+    {
+      method_ = a_method;
     }
 
     inline std::string& Request::uri ()

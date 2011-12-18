@@ -33,6 +33,15 @@ Server::Server (uint16_t a_port)
   parser_ = new Parser();
 }
 
+Server::~Server ()
+{
+  if (server_socket_) {
+    close(server_socket_);
+  }
+
+  delete parser_;
+}
+
 bool Server::begin (Request*& a_request, Response*& a_response)
 {
   char buffer[4096];
@@ -45,6 +54,7 @@ bool Server::begin (Request*& a_request, Response*& a_response)
   client_socket = accept(server_socket_, NULL, NULL);
   if (client_socket < 0) {
     close(server_socket_);
+    server_socket_ = 0;
     return false;
   }
 

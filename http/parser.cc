@@ -1,5 +1,7 @@
 
 #include "http/parser.h"
+#include "http/method.h"
+
 #include "http_parser.h"
 
 #include <boost/regex.hpp>
@@ -93,6 +95,12 @@ Parser::Parser ()
   PARSER()->data = this;
 }
 
+Parser::~Parser ()
+{
+  delete PARSER();
+  delete SETTINGS();
+}
+
 bool Parser::feed (const char* a_buffer, size_t a_size)
 {
   return http_parser_execute(PARSER(), SETTINGS(), a_buffer, a_size) == a_size;
@@ -137,6 +145,7 @@ int Parser::on_headers_complete ()
 {
   // extract query string from URL
   current_request().uri().assign(extract_query_string(current_request().uri(), current_request().params));
+  current_request().set_method(http::Method::GET);
   return 0;
 }
 

@@ -26,6 +26,8 @@ namespace kiwi {
       public:
       Base (const std::string& a_name);
 
+      virtual ~Base ();
+
       template<typename T>
       void add_action(
         const std::string& a_action_name,

@@ -18,6 +18,8 @@ namespace kiwi {
        */
       Base ();
 
+      virtual ~Base ();
+
       public:
       void run (uint16_t a_port);
 

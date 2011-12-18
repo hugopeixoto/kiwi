@@ -4,7 +4,15 @@
 
 using kiwi::controller::Engine;
 
-void Engine::add (Base* a_controller) {
+Engine::~Engine ()
+{
+  for (const std::pair<std::string, Base*>& controller : controllers_) {
+    delete controller.second;
+  }
+}
+
+void Engine::add (Base* a_controller)
+{
   controllers_[a_controller->name()] = a_controller;
 }
 

@@ -17,6 +17,8 @@ namespace kiwi {
        */
       Server (uint16_t a_port);
 
+      virtual ~Server ();
+
       /**
        * @brief Blocks until there is a request to serve, or the server fails.
        */

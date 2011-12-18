@@ -15,6 +15,12 @@ kiwi::application::Base::Base ()
   controller_engine_ = new kiwi::controller::Engine();
 }
 
+kiwi::application::Base::~Base ()
+{
+  delete controller_engine_;
+  delete routing_;
+}
+
 void kiwi::application::Base::set_routing (kiwi::routing::Base* a_routing)
 {
   routing_ = a_routing;

@@ -16,6 +16,9 @@ namespace kiwi {
 
     class Engine {
       public:
+
+      virtual ~Engine ();
+
       void add (Base* a_base);
       bool execute (
           const http::Request& a_request,

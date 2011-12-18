@@ -15,6 +15,8 @@ namespace kiwi {
       public:
       Parser ();
 
+      ~Parser ();
+
       bool feed (const char* a_buffer, size_t a_size);
 
       bool pop_request (Request*& a_request);
