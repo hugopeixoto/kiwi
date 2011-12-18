@@ -20,7 +20,7 @@ namespace kiwi {
     class Base {
       protected:
       typedef void (*View) (std::ostream&, const view::Parameters&);
-      typedef boost::function<void(const http::Request&)> Action;
+      typedef boost::function<void()> Action;
       typedef std::map<std::string, std::pair<Action, View>> ActionMapType;
 
       public:
@@ -31,7 +31,7 @@ namespace kiwi {
       template<typename T>
       void add_action(
         const std::string& a_action_name,
-        void (T::*a_action)(const http::Request& a_request),
+        void (T::*a_action)(),
         View a_view);
 
       bool execute (
@@ -45,10 +45,11 @@ namespace kiwi {
        */
       public:
       const std::string& name ();
+      const http::Request* request;
+      view::Parameters params;
 
       std::string name_;
       ActionMapType actions_;
-      view::Parameters params;
     };
 
     inline const std::string& Base::name ()
@@ -59,11 +60,11 @@ namespace kiwi {
     template<typename T>
     void Base::add_action (
         const std::string& a_action_name,
-        void (T::*a_action)(const http::Request&),
+        void (T::*a_action)(),
         View a_view)
     {
       actions_[a_action_name] = std::make_pair(
-        boost::bind(a_action, reinterpret_cast<T*>(this), _1),
+        boost::bind(a_action, reinterpret_cast<T*>(this)),
         a_view);
     }
   }

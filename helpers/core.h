@@ -13,8 +13,12 @@ namespace kiwi {
     std::string path (const Model* a_object)
     {
       std::ostringstream sout;
-      sout << "/" << Model::model_name_ << "s/" << a_object->id();
+      sout << "/" << Model::model_name_ << "s/" << a_object->get("id").to_s();
       return sout.str();
+    }
+
+    std::string link_to (const std::string& a_text, const std::string& a_path) {
+      return "<a href='" + a_path + "'>" + a_text + "</a>";
     }
 
     template<typename Model>
@@ -22,6 +26,11 @@ namespace kiwi {
       std::ostringstream sout;
       sout << "<a href='" << path(a_object) << "'>" << a_text << "</a>";
       return sout.str();
+    }
+
+    template<>
+    std::string link_to (const std::string& a_text, const char* a_path) {
+      return link_to(a_text, std::string(a_path));
     }
   }
 }

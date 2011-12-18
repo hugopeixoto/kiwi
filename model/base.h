@@ -3,25 +3,71 @@
 #define KIWI_MODEL_BASE_H_
 
 #include <string>
+#include <list>
 #include <map>
 #include <set>
+
+#include "model/attribute.h"
 
 namespace kiwi {
   namespace model {
     template<typename Model>
     class Base {
     public:
-      typedef std::set<Model*> Set;
+      enum AttributeType {
+        Uint64,
+        String
+      };
 
+      typedef std::set<Model*> Set;
+      typedef std::map<std::string, Attribute> AttributeMap;
+      typedef std::list<std::string> ColumnList;
+
+      /**
+       * Object methods
+       */
+    public:
+      Base () {}
+      Base (const AttributeMap& a_params) {
+        values_ = a_params;
+      }
+
+      Attribute get(const std::string& a_column) const {
+        auto it = values_.find(a_column);
+
+        if (it == values_.end())
+          return Attribute("");
+        else
+          return it->second;
+      }
+
+      Attribute operator[] (const std::string& a_column)
+      {
+        return get(a_column);
+      }
+
+    protected:
+      std::map<std::string, Attribute> values_;
+
+      /**
+       * AR methods.
+       * They'll be living here while I figure out
+       * how to structure this out.
+       */
+    public:
       static Model* find (const std::string& a_id);
 
       static Set all ();
 
+      /**
+       * Static stuff. Cache and table definitions
+       */
     protected:
       static std::map<std::string, Model*> cache_;
 
     public:
       static const char model_name_[];
+      static const ColumnList columns_;
     };
 
     template<typename Model>
@@ -37,8 +83,17 @@ namespace kiwi {
 
       // Load the thing from the database.
       Model* obj = NULL;
-      if (a_id == "1") obj = new Model(1, "Kiwi first post");
-      if (a_id == "2") obj = new Model(2, "Kiwi *second* post");
+
+      AttributeMap m1({ {   "id", Attribute("1") },
+                        { "name", Attribute("Kiwi first post")},
+                        { "body", Attribute("Why hello here, sir.\nThis is my first kiwi post.") } });
+
+      AttributeMap m2({ {   "id", Attribute("2") },
+                        { "name", Attribute("Kiwi second post")},
+                        { "body", Attribute("What is this? I do not even.") } });
+
+      if (a_id == "1") obj = new Model(m1);
+      if (a_id == "2") obj = new Model(m2);
 
       return (cache_[a_id] = obj);
     }

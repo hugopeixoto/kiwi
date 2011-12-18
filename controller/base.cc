@@ -29,7 +29,9 @@ bool Base::execute (
       params.set(param.first, param.second);
     }
 
-    (it->second.first)(a_request);
+    request = &a_request;
+    (it->second.first)();
+    request = NULL;
 
     // render view
     std::ostringstream sout;
