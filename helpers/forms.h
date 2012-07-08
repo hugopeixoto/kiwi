@@ -18,7 +18,7 @@ namespace kiwi {
           std::ostringstream s;
           FormBuilder form(a_object);
 
-          s << "<form>";
+          s << "<form action='" << kiwi::helpers::path(a_object) << "' method='POST'>";
           with_output_buffer(std::bind<void>(a_block, form), s);
           s << "</form>";
 
