@@ -38,6 +38,10 @@ namespace kiwi {
               return "<textarea name='" + h(a_column) + "'>" + h(object_->get(a_column)) + "</textarea>";
             }
 
+            std::string submit (const char* a_label) {
+              return "<input type='submit' name='commit' value='" + h(a_label) + "' />";
+            }
+
           protected:
             model::Abstract* object_;
         };
