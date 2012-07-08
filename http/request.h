@@ -13,8 +13,17 @@ namespace kiwi {
     class const_map : public std::map<K, V> {
       public:
       typedef std::map<K, V> super;
-      const V& operator[](const V& a_value) const {
-        typename super::const_iterator it = find(a_value);
+
+      V& operator[](const K& a_key) {
+        return super::operator[](a_key);
+      }
+
+      bool has_key (const K& a_key) const {
+        return find(a_key) != super::end();
+      }
+
+      const V& operator[](const K& a_key) const {
+        typename super::const_iterator it = find(a_key);
         if (it != super::end()) return it->second;
         return default_;
       }
@@ -35,6 +44,7 @@ namespace kiwi {
       void set_method (const http::Method& a_method);
 
       const_map<std::string, std::string> params;
+      const_map<std::string, std::string> headers;
 
       void clear ();
 

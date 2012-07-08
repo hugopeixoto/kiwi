@@ -38,6 +38,7 @@ namespace kiwi {
 
       protected:
       Request& current_request ();
+      void add_header ();
 
       /**
        * Member variables
@@ -50,6 +51,9 @@ namespace kiwi {
 
       std::string buffer_;
       int extra_state_;
+
+      std::string header_field_;
+      std::string header_value_;
 
       http_parser_settings_ptr settings_;
       http_parser_ptr parser_;

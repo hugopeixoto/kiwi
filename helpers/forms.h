@@ -19,6 +19,7 @@ namespace kiwi {
           FormBuilder form(a_object);
 
           s << "<form action='" << kiwi::helpers::path(a_object) << "' method='POST'>";
+          s << "<input type='hidden' name='_method' value='PUT' />";
           with_output_buffer(std::bind<void>(a_block, form), s);
           s << "</form>";
 

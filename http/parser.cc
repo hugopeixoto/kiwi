@@ -14,9 +14,8 @@ using kiwi::http::Parser;
 #define SETTINGS() static_cast<http_parser_settings*>(settings_)
 #define PARSER() static_cast<http_parser*>(parser_)
 
-static std::string extract_query_string (
-  const std::string& a_uri, 
-  std::map<std::string, std::string>& a_params);
+static std::string extract_query_string (const std::string& a_uri, std::map<std::string, std::string>& a_params);
+static void extract_params (const std::string& a_uri, std::map<std::string, std::string>& a_params);
 
 char hex_value[] = {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -137,6 +136,20 @@ int Parser::on_message_begin ()
 
 int Parser::on_message_complete ()
 {
+  if (buffer_.size() > 0) {
+    extract_params(buffer_, current_request().params);
+    if (current_request().params.has_key("_method")) {
+      std::string method = current_request().params["_method"];
+      if (method == "PUT") {
+        current_request().set_method(http::Method::PUT);
+      } else if (method == "DELETE") {
+        current_request().set_method(http::Method::DELETE);
+      }
+    }
+
+    buffer_.resize(0);
+  }
+
   ++completed_requests_;
   return 0;
 }
@@ -145,7 +158,25 @@ int Parser::on_headers_complete ()
 {
   // extract query string from URL
   current_request().uri().assign(extract_query_string(current_request().uri(), current_request().params));
-  current_request().set_method(http::Method::GET);
+
+  switch(PARSER()->method) {
+    case HTTP_GET:
+      current_request().set_method(http::Method::GET);
+      break;
+    case HTTP_POST:
+      current_request().set_method(http::Method::POST);
+      break;
+    case HTTP_PUT:
+      current_request().set_method(http::Method::PUT);
+      break;
+    case HTTP_DELETE:
+      current_request().set_method(http::Method::DELETE);
+      break;
+    default:
+      current_request().set_method(http::Method::GET);
+      break;
+  }
+
   return 0;
 }
 
@@ -157,17 +188,33 @@ int Parser::on_url (const char* a_buffer, size_t a_length)
 
 int Parser::on_header_field (const char* a_buffer, size_t a_length)
 {
+  add_header();
+  header_field_.append(a_buffer, a_length);
   return 0;
 }
 
 int Parser::on_header_value (const char* a_buffer, size_t a_length)
 {
+  header_value_.append(a_buffer, a_length);
   return 0;
 }
 
 int Parser::on_body (const char* a_buffer, size_t a_length)
 {
+  add_header();
+
+  buffer_.append(a_buffer, a_length);
   return 0;
+}
+
+void Parser::add_header ()
+{
+  if (header_value_.size() > 0) {
+    current_request().headers[header_field_] = header_value_;
+    printf("%s ===> %s\n", header_field_.c_str(), header_value_.c_str());
+    header_field_.resize(0);
+    header_value_.resize(0);
+  }
 }
 
 std::string Parser::percent_decode (const std::string& a_string)
@@ -200,30 +247,35 @@ std::string extract_query_string (
   
   boost::sub_match<std::string::const_iterator> qs_match = results["QS"];
   if (qs_match.matched) {
-    std::string qs = qs_match.str();
-    for (size_t i = 0; i < qs.size();) {
-      size_t j = qs.find_first_of("&=", i);
-      if (j == std::string::npos) {
-        a_params[Parser::percent_decode(qs.substr(i))] = "";
-        i = qs.size();
-      } else {
-        if (qs[j] == '&') {
-          a_params[Parser::percent_decode(qs.substr(i, j - i))] = "";
-          i = j + 1;
-        } else {
-          size_t k = qs.find_first_of("&", j + 1);
-          if (k == std::string::npos) {
-            a_params[Parser::percent_decode(qs.substr(i, j - i))] = Parser::percent_decode(qs.substr(j + 1));
-            i = qs.size();
-          } else {
-            a_params[Parser::percent_decode(qs.substr(i, j - i))] = Parser::percent_decode(qs.substr(j + 1, k - (j + 1)));
-            i = k + 1;
-          }
-        }
-      }
-    }
+    extract_params(qs_match.str(), a_params);
   }
 
   return results["ABS_PATH"].str();
 }
+
+void extract_params(const std::string& a_urlencoded, std::map<std::string, std::string>& a_params)
+{
+  for (size_t i = 0; i < a_urlencoded.size();) {
+    size_t j = a_urlencoded.find_first_of("&=", i);
+    if (j == std::string::npos) {
+      a_params[Parser::percent_decode(a_urlencoded.substr(i))] = "";
+      i = a_urlencoded.size();
+    } else {
+      if (a_urlencoded[j] == '&') {
+        a_params[Parser::percent_decode(a_urlencoded.substr(i, j - i))] = "";
+        i = j + 1;
+      } else {
+        size_t k = a_urlencoded.find_first_of("&", j + 1);
+        if (k == std::string::npos) {
+          a_params[Parser::percent_decode(a_urlencoded.substr(i, j - i))] = Parser::percent_decode(a_urlencoded.substr(j + 1));
+          i = a_urlencoded.size();
+        } else {
+          a_params[Parser::percent_decode(a_urlencoded.substr(i, j - i))] = Parser::percent_decode(a_urlencoded.substr(j + 1, k - (j + 1)));
+          i = k + 1;
+        }
+      }
+    }
+  }
+}
+
 
