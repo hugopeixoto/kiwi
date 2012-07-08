@@ -19,7 +19,7 @@ namespace kiwi {
       }
 
       bool has_key (const K& a_key) const {
-        return find(a_key) != super::end();
+        return super::find(a_key) != super::end();
       }
 
       const V& operator[](const K& a_key) const {
