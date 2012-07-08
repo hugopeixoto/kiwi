@@ -19,8 +19,8 @@ namespace kiwi {
   namespace controller {
     class Base {
       protected:
-      typedef void (*View) (std::ostream&, const view::Parameters&);
-      typedef boost::function<void()> Action;
+      typedef std::function<void()> View;
+      typedef std::function<void()> Action;
       typedef std::map<std::string, std::pair<Action, View>> ActionMapType;
 
       public:
@@ -32,13 +32,15 @@ namespace kiwi {
       void add_action(
         const std::string& a_action_name,
         void (T::*a_action)(),
-        View a_view);
+        void (T::*a_view)());
 
       bool execute (
         const http::Request& a_request,
         http::Response& a_response,
         const std::string& a_action,
         const std::map<std::string, std::string>& a_params);
+
+      virtual bool render (View& a_view, http::Response& a_response) = 0;
 
       /**
        * Getters / Setters
@@ -61,11 +63,11 @@ namespace kiwi {
     void Base::add_action (
         const std::string& a_action_name,
         void (T::*a_action)(),
-        View a_view)
+        void (T::*a_view)())
     {
       actions_[a_action_name] = std::make_pair(
         boost::bind(a_action, reinterpret_cast<T*>(this)),
-        a_view);
+        boost::bind(a_view, reinterpret_cast<T*>(this)));
     }
   }
 }

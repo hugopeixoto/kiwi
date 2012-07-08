@@ -44,21 +44,21 @@ void print_character(char c) {
 }
 
 void printHtml(const char * str) {
-  printf("out << \"");
+  printf("(*output_buffer) << \"");
   while (*str) print_character(*str++);
   printf("\";\n");
 }
 
-void printCoder () { printf("out << ("); }
-void printEndCoder (int i) { if (i) printf(");"); }
+void printCoder () { printf("(*output_buffer) << "); }
+void printEndCoder (int i) { if (i) printf(";"); }
 void printCpp(const char* str) { printf("%s", str); }
 
 int main(int argc, char * argv[])
 {
-  printf("#include <iostream>\n#include <view/parameters.h>\n");
-  printf("static void view_%s_%s(std::ostream& out, const kiwi::view::Parameters& params) {\n", argv[1], argv[2]);
+  printf("%s\n", argv[2]);
+  printf("void %s () {\n", argv[1]);
   yylex();
   printf("}\n");
   return 0;
-// <html><% printf("hello, /* %> \" ** / **/"); /* %> ** /**/ %></html>
 }
+

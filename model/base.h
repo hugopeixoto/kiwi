@@ -11,63 +11,78 @@
 
 namespace kiwi {
   namespace model {
+
+    class Abstract {
+      public:
+        enum AttributeType {
+          Uint64,
+          String
+        };
+
+        typedef std::map<std::string, Attribute> AttributeMap;
+        typedef std::list<std::string> ColumnList;
+
+        Abstract () { }
+        Abstract (const AttributeMap& a_params) {
+          values_ = a_params;
+        }
+
+        Attribute get(const std::string& a_column) const {
+          auto it = values_.find(a_column);
+
+          if (it == values_.end())
+            return Attribute("");
+          else
+            return it->second;
+        }
+
+        Attribute operator[] (const std::string& a_column)
+        {
+          return get(a_column);
+        }
+
+        virtual const char* model_name () const = 0;
+
+      protected:
+        std::map<std::string, Attribute> values_;
+
+
+    };
+
     template<typename Model>
-    class Base {
-    public:
-      enum AttributeType {
-        Uint64,
-        String
-      };
+    class Base : public Abstract {
+      public:
+        typedef std::set<Model*> Set;
+        /**
+         * Object methods
+         */
+        Base () {}
+        Base (const AttributeMap& a_params) : Abstract(a_params) { }
 
-      typedef std::set<Model*> Set;
-      typedef std::map<std::string, Attribute> AttributeMap;
-      typedef std::list<std::string> ColumnList;
+        const char* model_name () const {
+          return model_name_;
+        }
 
-      /**
-       * Object methods
-       */
-    public:
-      Base () {}
-      Base (const AttributeMap& a_params) {
-        values_ = a_params;
-      }
+      public:
+        /**
+         * AR methods.
+         * They'll be living here while I figure out
+         * how to structure this out.
+         */
+      public:
+        static Model* find (const std::string& a_id);
 
-      Attribute get(const std::string& a_column) const {
-        auto it = values_.find(a_column);
+        static Set all ();
 
-        if (it == values_.end())
-          return Attribute("");
-        else
-          return it->second;
-      }
+        /**
+         * Static stuff. Cache and table definitions
+         */
+      protected:
+        static std::map<std::string, Model*> cache_;
 
-      Attribute operator[] (const std::string& a_column)
-      {
-        return get(a_column);
-      }
-
-    protected:
-      std::map<std::string, Attribute> values_;
-
-      /**
-       * AR methods.
-       * They'll be living here while I figure out
-       * how to structure this out.
-       */
-    public:
-      static Model* find (const std::string& a_id);
-
-      static Set all ();
-
-      /**
-       * Static stuff. Cache and table definitions
-       */
-    protected:
-      static std::map<std::string, Model*> cache_;
-
-    public:
-      static const char model_name_[];
-      static const ColumnList columns_;
+      public:
+        static const char model_name_[];
+        static const ColumnList columns_;
     };
 
     template<typename Model>

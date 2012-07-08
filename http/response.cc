@@ -21,10 +21,12 @@ void Response::start_body ()
 void Response::finish_body ()
 {
   static const char msg[] = "0\r\n\r\n";
+
+  sync();
   send(fd_, msg, sizeof(msg) - 1, 0);
 }
 
-void Response::body_chunk (const char* a_buffer, size_t a_size)
+int Response::body_chunk (const char* a_buffer, size_t a_size)
 {
   char chunk_size[8 + 2];
 
@@ -42,5 +44,6 @@ void Response::body_chunk (const char* a_buffer, size_t a_size)
   send(fd_, chunk_size + j, sizeof(chunk_size) - j, 0);
   send(fd_, a_buffer, a_size, 0);
   send(fd_, "\r\n", 2, 0);
+  return 0;
 }
 

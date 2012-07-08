@@ -1,6 +1,8 @@
 
 #include "controller/base.h"
 #include "http/response.h"
+#include "view/base.h"
+
 #include <sstream>
 
 using kiwi::controller::Base;
@@ -23,33 +25,31 @@ bool Base::execute (
   ActionMapType::iterator it = actions_.find(a_action);
   if (it == actions_.end()) {
     return false;
-  } else {
-    // pre-fill the view with the routing parameters
-    for (const std::pair<std::string, std::string>& param : a_params) {
-      params.set(param.first, param.second);
-    }
-
-    request = &a_request;
-    (it->second.first)();
-    request = NULL;
-
-    // render view
-    std::ostringstream sout;
-    (it->second.second)(sout, params);
-
-    // send it
-    a_response.start_body();
-
-    std::string response_text(sout.str());
-    a_response.body_chunk(response_text.c_str(), response_text.size());
-
-    a_response.finish_body();
-
-    // clear parameters
-    params.clear();
-
-    return true;
   }
+
+  // pre-fill the view with the routing parameters
+  for (const std::pair<std::string, std::string>& param : a_params) {
+    params.set(param.first, param.second);
+  }
+
+  request = &a_request;
+  (it->second.first)();
+  request = NULL;
+
+  // render view
+  render(it->second.second, a_response);
+
+  // clear parameters
+  params.clear();
+
+  return true;
 }
 
+bool Base::render (View& a_view, http::Response& a_response)
+{
+  a_response.start_body();
+  a_view();
+  a_response.finish_body();
+  return true;
+}
 

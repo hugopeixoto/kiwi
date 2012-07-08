@@ -17,7 +17,7 @@ namespace kiwi {
       return sout.str();
     }
 
-    std::string link_to (const std::string& a_text, const std::string& a_path) {
+    inline std::string link_to (const std::string& a_text, const std::string& a_path) {
       return "<a href='" + a_path + "'>" + a_text + "</a>";
     }
 
@@ -29,7 +29,7 @@ namespace kiwi {
     }
 
     template<>
-    std::string link_to (const std::string& a_text, const char* a_path) {
+    inline std::string link_to (const std::string& a_text, const char* a_path) {
       return link_to(a_text, std::string(a_path));
     }
   }
