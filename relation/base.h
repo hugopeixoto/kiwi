@@ -63,8 +63,7 @@ namespace kiwi {
               attributes.insert(std::make_pair(it->first, model::Attribute(it->second)));
             }
 
-            Model* model = new Model(attributes);
-            set.insert(model);
+            set.insert(Model::instantiate(attributes));
           }
 
           delete it;
