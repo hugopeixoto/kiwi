@@ -113,8 +113,6 @@ namespace kiwi {
       fprintf(stderr, "Cache miss (%lld)\n", a_id);
 
       // Load the thing from the database.
-      Model* obj = NULL;
-
       typename Model::Set results = scoped().where("id", a_id).first().execute();
 
       if (results.size() != 1) {
