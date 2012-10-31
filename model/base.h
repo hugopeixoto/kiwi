@@ -71,7 +71,7 @@ namespace kiwi {
       public:
         static Model* find (const uint64_t& a_id);
 
-        static Set all ();
+        static Set all () { return relation::Base<Model>(table_name()).execute(); }
 
         static relation::Base<Model> scoped() { return relation::Base<Model>(table_name()); }
 
@@ -115,35 +115,13 @@ namespace kiwi {
       // Load the thing from the database.
       Model* obj = NULL;
 
-      // Base<Model>::Set results = scoped().where("id", a_id).first().load<Model>();
+      typename Model::Set results = scoped().where("id", a_id).first().execute();
 
-      // if (results.size() != 1) {
-      //   return NULL;
-      // } else {
-      //   return cache_[a_id] = *(results.begin());
-      // }
-
-      AttributeMap m1({ {   "id", Attribute(1) },
-                        { "name", Attribute("Kiwi first post")},
-                        { "body", Attribute("Why hello here, sir.\nThis is my first kiwi post.") } });
-
-      AttributeMap m2({ {   "id", Attribute(2) },
-                        { "name", Attribute("Kiwi second post")},
-                        { "body", Attribute("What is this? I do not even.") } });
-
-      if (a_id == 1) obj = new Model(m1);
-      if (a_id == 2) obj = new Model(m2);
-
-      return (cache_[a_id] = obj);
-    }
-
-    template<typename Model>
-    typename Base<Model>::Set Base<Model>::all ()
-    {
-      Base<Model>::Set set;
-      set.insert(find(1));
-      set.insert(find(2));
-      return set;
+      if (results.size() != 1) {
+        return NULL;
+      } else {
+        return cache_[a_id] = *(results.begin());
+      }
     }
 
     /**
