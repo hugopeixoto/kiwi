@@ -19,7 +19,6 @@ namespace kiwi {
       public:
         Base (const std::string& a_table_name) {
           manager_.from(a_table_name).project("*");
-
           table_ = a_table_name;
         }
 
