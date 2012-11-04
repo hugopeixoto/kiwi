@@ -1,10 +1,16 @@
 LIBRARY=bin/libkiwi.a
 ECC=bin/ecc
 
-CXXFLAGS=-std=c++0x -I . -I ../http-parser -g
+CXXFLAGS=-std=c++0x -I . -I ../http-parser -g -stdlib=libc++
 
 HTTP_SRCS=http/server.cc http/request.cc http/response.cc http/parser.cc ../http-parser/http_parser.c
-SRCS=helpers/core.cc routing/base.cc application/base.cc controller/base.cc controller/engine.cc view/base.cc view/parameters.cc model/attribute.cc activerecord/connection.cc activerecord/iterator.cc activerecord/base.cc $(HTTP_SRCS)
+
+AR_GEN_SRCS=activerecord/base.cc activerecord/iterator.cc activerecord/connection.cc
+AR_PG_SRCS=activerecord/postgresql/connection.cc activerecord/postgresql/iterator.cc
+AR_SRCS=$(AR_GEN_SRCS) $(AR_PG_SRCS)
+
+SRCS=helpers/core.cc routing/base.cc application/base.cc controller/base.cc controller/engine.cc view/base.cc view/parameters.cc model/attribute.cc $(AR_SRCS) $(HTTP_SRCS)
+CC=c++
 
 OBJS=$(patsubst %.cc, %.o,$(patsubst %.c, %.o,$(SRCS)))
 
