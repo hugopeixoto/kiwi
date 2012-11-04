@@ -4,7 +4,7 @@
 
 // #include "parameters.h"
 
-#include <boost/function.hpp>
+#include <functional>
 #include <boost/bind.hpp>
 
 #include <map>
