@@ -58,21 +58,5 @@ namespace kiwi {
   }
 }
 
-#if 0
-class routing {
-  protected:
-  std::string extract_query_string (const std::string& a_uri, match_t& a_match);
-
-  struct rule {
-    const boost::regex* regex;
-    match_t             match;
-
-    rule (const http_request::http_method& m, const boost::regex* r, const std::string& c, const std::string& a);
-    ~rule ();
-  };
-
-};
-#endif
-
 #endif // ROUTING_H_
 
