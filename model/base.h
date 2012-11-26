@@ -91,6 +91,42 @@ namespace kiwi {
         }
 
         /**
+         *
+         */
+        bool update_attributes (const AttributeMap& a_attributes)
+        {
+          values_ = a_attributes;
+          return save();
+        }
+
+        bool save ()
+        {
+          //if (is_new()) {
+          //    return create();
+          //} else {
+              return update();
+          //}
+        }
+
+        bool update ()
+        {
+          attributes_with_values = arel_attributes_values(false, false, attribute_names)
+          return 0 if attributes_with_values.empty?
+          klass = self.class
+          stmt = klass.unscoped.where(klass.arel_table[klass.primary_key].eq(id)).arel.compile_update(attributes_with_values)
+          klass.connection.update stmt
+
+
+          std::vector<std::vector<std::string> > x;
+          for (const auto& column : columns_) {
+
+          }
+
+          // UpdateManager
+          return true;
+        }
+
+        /**
          * Static stuff. Cache and table definitions
          */
       protected:

@@ -9,6 +9,10 @@ namespace kiwi {
   namespace model {
     class Attribute {
     public:
+      Attribute ()
+      {
+      }
+
       Attribute (const std::string& a_value)
       {
         value_ = a_value;
