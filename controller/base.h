@@ -24,6 +24,9 @@ namespace kiwi {
       typedef std::map<std::string, std::pair<Action, View>> ActionMapType;
 
       public:
+      typedef std::map<std::string, std::string> Parameters;
+
+      public:
       Base (const std::string& a_name);
 
       virtual ~Base ();
@@ -38,7 +41,7 @@ namespace kiwi {
         const http::Request& a_request,
         http::Response& a_response,
         const std::string& a_action,
-        const std::map<std::string, std::string>& a_params);
+        const Parameters& a_params);
 
       virtual bool render (View& a_view, http::Response& a_response) = 0;
 
@@ -48,7 +51,8 @@ namespace kiwi {
       public:
       const std::string& name ();
       const http::Request* request;
-      view::Parameters params;
+      Parameters params;
+      view::Parameters view;
 
       std::string name_;
       ActionMapType actions_;

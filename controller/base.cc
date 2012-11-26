@@ -20,17 +20,15 @@ bool Base::execute (
     const http::Request& a_request,
     http::Response& a_response,
     const std::string& a_action,
-    const std::map<std::string, std::string>& a_params)
+    const Parameters& a_params)
 {
   ActionMapType::iterator it = actions_.find(a_action);
   if (it == actions_.end()) {
     return false;
   }
 
-  // pre-fill the view with the routing parameters
-  for (const std::pair<std::string, std::string>& param : a_params) {
-    params.set(param.first, param.second);
-  }
+  params = a_params;
+  view.clear();
 
   request = &a_request;
   (it->second.first)();
