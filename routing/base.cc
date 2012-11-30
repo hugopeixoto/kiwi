@@ -13,8 +13,7 @@ namespace kiwi { namespace routing {
 struct Rule {
   http::Method method;
   boost::regex match;
-  std::string  controller;
-  std::string  action;
+  Base::Action action;
   std::vector<std::string> symbols;
 };
 } }
@@ -44,31 +43,28 @@ Base& Base::resource (const std::string& a_plural_resource_name)
 {
   std::string escaped = a_plural_resource_name;//escape(a_plural_resource_name);
 
-  map(http::Method::GET, "/" + escaped, a_plural_resource_name, "index");
-  map(http::Method::GET, "/" + escaped + "/:id", a_plural_resource_name, "show");
+  //map(http::Method::GET, "/" + escaped, a_plural_resource_name, "index");
+  //map(http::Method::GET, "/" + escaped + "/:id", a_plural_resource_name, "show");
 
-  map(http::Method::GET, "/" + escaped + "/:id/edit", a_plural_resource_name, "edit");
-  map(http::Method::PUT, "/" + escaped + "/:id", a_plural_resource_name, "update");
+  //map(http::Method::GET, "/" + escaped + "/:id/edit", a_plural_resource_name, "edit");
+  //map(http::Method::PUT, "/" + escaped + "/:id", a_plural_resource_name, "update");
 
-  map(http::Method::GET, "/" + escaped + "/:id/new", a_plural_resource_name, "new");
-  map(http::Method::POST, "/" + escaped + "/:id", a_plural_resource_name, "create");
+  //map(http::Method::GET, "/" + escaped + "/:id/new", a_plural_resource_name, "new");
+  //map(http::Method::POST, "/" + escaped + "/:id", a_plural_resource_name, "create");
 
-  // map(http::Method::GET, "/" + escaped + "/:id/delete", a_plural_resource_name, "delete");
-  map(http::Method::DELETE, "/" + escaped + "/:id", a_plural_resource_name, "destroy");
+  //// map(http::Method::GET, "/" + escaped + "/:id/delete", a_plural_resource_name, "delete");
+  //map(http::Method::DELETE, "/" + escaped + "/:id", a_plural_resource_name, "destroy");
 
   return *this;
 }
 
 Base& Base::root (const std::string& a_controller, const std::string& a_action)
 {
-  return this->map(http::Method::GET, "/", a_controller, a_action);
+  //return this->map(http::Method::GET, "/", a_controller, a_action);
+  return *this;
 }
 
-Base& Base::map (
-    const http::Method& a_method,
-    const std::string& a_match,
-    const std::string& a_controller,
-    const std::string& a_action)
+Base& Base::map (const http::Method& a_method, const std::string& a_match, Action a_action)
 {
   std::string escaped = regex_escape(a_match);
   static const boost::regex re_symbols(":([a-zA-Z0-9_]+)");
@@ -76,7 +72,6 @@ Base& Base::map (
 
   Rule* r       = new Rule();
   r->method     = a_method;
-  r->controller = a_controller;
   r->action     = a_action;
   r->match      = regex_replace(
                     a_match,
@@ -84,7 +79,7 @@ Base& Base::map (
                     replace_by,
                     boost::regex_constants::match_default | boost::regex_constants::format_sed);
 
-  std::cerr << "routing rule: " << std::setw(42) << a_match << " generated: " << r->match << std::endl;
+  // std::cerr << "routing rule: " << std::setw(42) << a_match << " generated: " << r->match << std::endl;
 
   boost::sregex_iterator re_it(a_match.begin(), a_match.end(), re_symbols);
   boost::sregex_iterator end;
@@ -108,7 +103,6 @@ bool Base::match (
 
   for (Rule* rule : rules_) {
     if (a_method == rule->method && boost::regex_match(a_uri, mr, rule->match)) {
-      a_match.controller = rule->controller;
       a_match.action = rule->action;
       for (const std::string& symbol : rule->symbols) {
         a_match.parameters[symbol] = mr[symbol];

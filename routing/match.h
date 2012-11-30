@@ -8,8 +8,7 @@
 namespace kiwi {
   namespace routing {
     struct Match {
-      std::string controller;
-      std::string action;
+      void* action;
       
       std::map<std::string, std::string> parameters; //!< Params, zomg
     };

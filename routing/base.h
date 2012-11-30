@@ -5,13 +5,14 @@
 #include <string>
 #include <list>
 
+#include "rule.h"
+
 namespace kiwi {
   namespace http {
     enum class Method;
   }
 
   namespace routing {
-    class Rule;
     class Match;
 
     class Base {
@@ -22,6 +23,8 @@ namespace kiwi {
       virtual ~Base ();
 
       public:
+
+      typedef void* Action;
       /**
        * @brief Adds rules for a RESTful resource, identified by the given name.
        */
@@ -36,11 +39,7 @@ namespace kiwi {
       /**
        * @brief Maps the given matching string to a controller and action.
        */
-      Base& map (
-          const http::Method& a_method,
-          const std::string& a_match,
-          const std::string& a_controller,
-          const std::string& a_action);
+      Base& map (const http::Method& a_method, const std::string& a_match, Action a_action);
 
       public:
       /**
@@ -53,7 +52,7 @@ namespace kiwi {
           Match& a_match);
 
       protected:
-      std::list<Rule*> rules_; //!< List of rules. To be replaced with a magic automata.
+      std::list<Rule<Action>*> rules_; //!< List of rules. To be replaced with a magic automata.
     };
   }
 }
