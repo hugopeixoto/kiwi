@@ -3,31 +3,61 @@
 #define KIWI_ROUTING_MATCH_H_
 
 #include <string>
-#include <vector>
+#include <map>
 #include <boost/regex.hpp>
-
-#include "http/method.h"
 
 namespace kiwi {
   namespace routing {
-    template<typename Target>
+    class MatchResult {
+        public:
+        virtual operator bool () const;
+        virtual std::string operator[] (const char*) const;
+
+        public:
+        bool matched;
+        std::map<std::string, std::string> parameters;
+    };
+
     class Rule {
       public:
-      Rule (const http::Method& a_method, const std::string& a_text)
+      Rule (const std::string& a_text)
       {
-        method = a_method;
-        match  = a_text;
+        static const boost::regex re_symbols(":([a-zA-Z0-9_]+)");
+        static const std::string replace_by("(?<\\1>[^./]+)");
+
+        match = regex_replace(
+          a_text,
+          re_symbols, replace_by,
+          boost::regex_constants::match_default | boost::regex_constants::format_sed);
+
+        boost::sregex_iterator re_it(a_text.begin(), a_text.end(), re_symbols);
+        boost::sregex_iterator re_end;
+
+        for (; re_it != re_end; ++re_it) {
+            keywords.push_back((*re_it)[1].str());
+        }
       }
 
-      bool matches (const http::Method& a_method, const std::string& a_text) const
+      virtual MatchResult matches (const std::string& a_text) const
       {
-        return a_method == method && boost::regex_match(a_text, match);
+        boost::match_results<std::string::const_iterator> mr;
+        MatchResult result;
+
+        result.matched = boost::regex_match(a_text, mr, match);
+        if (result.matched) {
+          for (const auto& keyword : keywords) {
+            result.parameters[keyword] = mr[keyword];
+          }
+        }
+
+        return result;
       }
 
-      Target target;
-      http::Method method;
       boost::regex match;
-      std::vector<std::string> symbols;
+      std::list<std::string> keywords;
+
+      protected:
+      //static std::string regex_escape (const std::string& a_text);
     };
   }
 }

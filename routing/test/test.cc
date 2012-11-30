@@ -2,106 +2,71 @@
 #include "htest/htest.h"
 #include "routing/rule.h"
 
-typedef kiwi::routing::Rule<int> Rule;
+using kiwi::routing::Rule;
+using kiwi::routing::MatchResult;
 
 HTEST(Routing, ShouldMatchRootRoute, "It should match root route")
 {
-  Rule rule(kiwi::http::Method::GET, "/");
-  Assert(rule.matches(kiwi::http::Method::GET, "/"));
+  Rule rule("/");
+  Assert(rule.matches("/"));
 }
 
 HTEST(Routing, ShouldNotMatchIfExpressionDifferent, "It should not match if the text doesn't match the rule expression")
 {
-  Rule rule(kiwi::http::Method::GET, "/");
-  Assert(!rule.matches(kiwi::http::Method::GET, "herp"));
-}
-
-HTEST(Routing, TestShouldNotMatchIfTheVerbIsDifferent, "It should not match if the verb is different")
-{
-  Rule rule(kiwi::http::Method::GET, "/");
-  Assert(!rule.matches(kiwi::http::Method::POST, "/"));
+  Rule rule("/");
+  Assert(!rule.matches("herp"));
 }
 
 HTEST(Routing, TestShouldMatchARouteWithNoParameters, "It should match a route with no parameters")
 {
-  Rule rule(kiwi::http::Method::GET, "/hello");
-  Assert(rule.matches(kiwi::http::Method::GET, "/hello"));
+  Rule rule("/hello");
+  Assert(rule.matches("/hello"));
 }
 
 HTEST(Routing, TestShoultNotMatchWhenTheRouteIsASubstringOfTheURI, "It should not match when the route is a substring of the URI")
 {
-  Rule rule(kiwi::http::Method::GET, "/hello");
-  Assert(!rule.matches(kiwi::http::Method::GET, "/hello_world"));
+  Rule rule("/hello");
+  Assert(!rule.matches("/hello_world"));
 }
-
 
 HTEST(Routing, TestShouldMatchWithSingleParameter, "It should match with a single parameter")
 {
-  Rule rule(kiwi::http::Method::GET, "/hello/:target");
-  Assert(rule.matches(kiwi::http::Method::GET, "/hello/world"));
+  Rule rule("/hello/:target");
+  Assert(rule.matches("/hello/world"));
 }
 
-/*
-bool TestShouldNotMatchWithSingleParameterIfNoneIsProvided ()
+HTEST(Routing, TestShouldNotMatchWithSingleParameterIfNoneIsProvided, "It shoult not match with a single parameter if none is provided")
 {
-  kiwi::routing::Base router;
-  kiwi::routing::Match match;
-
-  router.map(kiwi::http::Method::GET, "/hello/:target", NULL);
-  ASSERT(!router.match(kiwi::http::Method::GET, "/hello", match));
-  return true;
+  Rule rule("/hello/:target");
+  Assert(!rule.matches("/hello"));
 }
 
-bool TestShouldNotMatchWithSingleParameterIfMoreThanOneIsProvided ()
+HTEST(Routing, SingleToManyParameters, "It should not match with a single parameter if more than one is provided")
 {
-  kiwi::routing::Base router;
-  kiwi::routing::Match match;
-
-  router.map(kiwi::http::Method::GET, "/hello/:target", NULL);
-  ASSERT(!router.match(kiwi::http::Method::GET, "/hello/world/from/peixoto", match));
-  return true;
+  Rule rule("/hello/:target");
+  Assert(!rule.matches("/hello/world/from/peixoto"));
 }
 
-bool TestShouldMatchWithMultipleParameters ()
+HTEST(Routing, ManyParams, "It should match with multiple parameters")
 {
-  kiwi::routing::Base router;
-  kiwi::routing::Match match;
-
-  router.map(kiwi::http::Method::GET, "/hello/:target/from/:source", NULL);
-  ASSERT(router.match(kiwi::http::Method::GET, "/hello/world/from/peixoto", match));
-  return true;
+  Rule rule("/hello/:target/from/:source");
+  Assert(rule.matches("/hello/world/from/peixoto"));
 }
 
-bool TestShouldRetrieveTheCorrectMatchWhenThereAreNoParameters ()
+HTEST(Routing, FillParameters, "It should fill the match parameters correctly")
 {
-  kiwi::routing::Base router;
-  kiwi::routing::Match match;
-  void* expected = (void*)0x123456;
-
-  router.map(kiwi::http::Method::GET, "/hello", expected);
-  router.match(kiwi::http::Method::GET, "/hello", match);
-  ASSERT(match.action == expected);
-  return true;
+  MatchResult result = Rule("/hello/:target/from/:source").matches("/hello/world/from/peixoto");
+  Assert(result["source"] == "peixoto");
+  Assert(result["target"] == "world");
 }
 
-bool TestShouldFillTheMatchParametersCorrectly ()
-{
-  kiwi::routing::Base router;
-  kiwi::routing::Match match;
-
-  router.map(kiwi::http::Method::GET, "/hello/:target/from/:source", NULL);
-  router.match(kiwi::http::Method::GET, "/hello/world/from/peixoto", match);
-
-  ASSERT(match.parameters["source"] == "peixoto");
-  ASSERT(match.parameters["target"] == "world");
-  return true;
-}
-*/
-
+#include <list>
 int main ()
 {
   int succeeded = 0;
   int failed = 0;
+
+  std::list<htest::Test*> failed_tests;
 
   for (auto test : htest::TestBucket::tests()) {
     if (test->Run()) {
@@ -110,13 +75,20 @@ int main ()
     } else {
       ++failed;
       printf("F");
+      failed_tests.push_back(test);
     }
 
     if ((succeeded + failed) % 80 == 0) puts("");
   }
 
   puts("");
+  for (auto test : failed_tests) {
+      puts(test->Description());
+  }
+
+  puts("");
   printf("%d tests, %d failures\n", succeeded + failed, failed);
+
   return 0;
 }
 
