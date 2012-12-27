@@ -1,7 +1,7 @@
 LIBRARY=bin/libkiwi.a
 ECC=bin/ecc
 
-CXXFLAGS=-std=c++0x -I . -I ../http-parser -g -stdlib=libc++
+CXXFLAGS=-std=c++0x -I . -I ../http-parser -g #-stdlib=libc++
 
 HTTP_SRCS=http/server.cc http/request.cc http/response.cc http/parser.cc ../http-parser/http_parser.c
 
@@ -39,7 +39,7 @@ bin/ecc: ecc/ecc.o
 	g++ -o $@ $< -lfl
 
 bin/test: $(LIBRARY) $(TEST_SRCS)
-	c++ -g -o bin/test test.cc -I ~/work -I ~/work/kiwi -std=c++0x -stdlib=libc++ -lboost_regex-mt ~/work/htest/htest.cc -Lbin -lkiwi $(TEST_SRCS)
+	c++ -g -o bin/test test.cc -I ~/work -I ~/work/kiwi -std=c++0x -lboost_regex-mt ~/work/htest/htest.cc -Lbin $(TEST_SRCS) -lkiwi
 
 test: bin/test
 	bin/test

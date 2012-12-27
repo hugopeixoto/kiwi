@@ -1,6 +1,7 @@
 
 #include "htest/htest.h"
 #include <list>
+#include <cstdio>
 
 int main ()
 {
