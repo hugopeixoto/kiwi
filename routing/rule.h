@@ -1,6 +1,6 @@
 
-#ifndef KIWI_ROUTING_MATCH_H_
-#define KIWI_ROUTING_MATCH_H_
+#ifndef KIWI_ROUTING_RULE_H_
+#define KIWI_ROUTING_RULE_H_
 
 #include <string>
 #include <map>
@@ -62,5 +62,5 @@ namespace kiwi {
   }
 }
 
-#endif // KIWI_ROUTING_MATCH_H_
+#endif // KIWI_ROUTING_RULE_H_
 

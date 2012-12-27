@@ -5,12 +5,18 @@ CXXFLAGS=-std=c++0x -I . -I ../http-parser -g -stdlib=libc++
 
 HTTP_SRCS=http/server.cc http/request.cc http/response.cc http/parser.cc ../http-parser/http_parser.c
 
+ROUTING_SRCS=routing/base.cc routing/rule.cc
+CONTROLLER_SRCS=controller/base.cc
 AR_GEN_SRCS=activerecord/base.cc activerecord/iterator.cc activerecord/connection.cc
 AR_PG_SRCS=activerecord/postgresql/connection.cc activerecord/postgresql/iterator.cc
 AR_SRCS=$(AR_GEN_SRCS) $(AR_PG_SRCS)
 
-SRCS=helpers/core.cc routing/base.cc application/base.cc controller/base.cc controller/engine.cc view/base.cc view/parameters.cc model/attribute.cc $(AR_SRCS) $(HTTP_SRCS)
+OTHER_SRCS=helpers/core.cc application/base.cc controller/engine.cc view/base.cc view/parameters.cc model/attribute.cc $(AR_SRCS)
+
+SRCS=$(HTTP_SRCS) $(ROUTING_SRCS) $(CONTROLLER_SRCS)
 CC=c++
+
+TEST_SRCS=$(shell find . -path "*/test/*.cc")
 
 OBJS=$(patsubst %.cc, %.o,$(patsubst %.c, %.o,$(SRCS)))
 
@@ -31,3 +37,10 @@ ecc/ecc.c: ecc/ecc.yy
 
 bin/ecc: ecc/ecc.o
 	g++ -o $@ $< -lfl
+
+bin/test: $(LIBRARY) $(TEST_SRCS)
+	c++ -g -o bin/test test.cc -I ~/work -I ~/work/kiwi -std=c++0x -stdlib=libc++ -lboost_regex-mt ~/work/htest/htest.cc -Lbin -lkiwi $(TEST_SRCS)
+
+test: bin/test
+	bin/test
+

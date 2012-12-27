@@ -35,7 +35,7 @@ HTEST(Routing, TestShouldMatchWithSingleParameter, "It should match with a singl
   Assert(rule.matches("/hello/world"));
 }
 
-HTEST(Routing, TestShouldNotMatchWithSingleParameterIfNoneIsProvided, "It shoult not match with a single parameter if none is provided")
+HTEST(Routing, TestShouldNotMatchWithSingleParameterIfNoneIsProvided, "It should not match with a single parameter if none is provided")
 {
   Rule rule("/hello/:target");
   Assert(!rule.matches("/hello"));
@@ -58,37 +58,5 @@ HTEST(Routing, FillParameters, "It should fill the match parameters correctly")
   MatchResult result = Rule("/hello/:target/from/:source").matches("/hello/world/from/peixoto");
   Assert(result["source"] == "peixoto");
   Assert(result["target"] == "world");
-}
-
-#include <list>
-int main ()
-{
-  int succeeded = 0;
-  int failed = 0;
-
-  std::list<htest::Test*> failed_tests;
-
-  for (auto test : htest::TestBucket::tests()) {
-    if (test->Run()) {
-      ++succeeded;
-      printf(".");
-    } else {
-      ++failed;
-      printf("F");
-      failed_tests.push_back(test);
-    }
-
-    if ((succeeded + failed) % 80 == 0) puts("");
-  }
-
-  puts("");
-  for (auto test : failed_tests) {
-      puts(test->Description());
-  }
-
-  puts("");
-  printf("%d tests, %d failures\n", succeeded + failed, failed);
-
-  return 0;
 }
 
