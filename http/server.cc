@@ -7,86 +7,196 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/in.h>
 #include <netinet/ip.h> /* superset of previous */
 #include <netinet/tcp.h>
 #include <assert.h>
 
+#include <list>
+
 using kiwi::http::Server;
 
-Server::Server (uint16_t a_port)
+struct Connection {
+    int fd;
+    kiwi::http::Parser parser;
+    kiwi::http::Response response;
+
+    Connection () {
+        fd = -1;
+    }
+
+    bool in_use () const { return fd != -1; }
+    bool ready () const { return false; }
+
+    void close ()
+    {
+        ::close(fd);
+        parser.reset();
+        fd = -1;
+    }
+};
+
+struct Server::Implementation {
+    const static int MAX_CONNECTIONS = 16;
+
+    int server_fd;
+    Connection connections[MAX_CONNECTIONS];
+    int nconnections;
+    int maxfd;
+    char* buffer;
+
+    void recalc ()
+    {
+        maxfd = server_fd;
+        for (uint32_t i = 0; i < MAX_CONNECTIONS; ++i) {
+            if (connections[i].in_use()) {
+                maxfd = std::max(maxfd, connections[i].fd);
+            }
+        }
+    }
+};
+
+Server::Server ()
 {
-  sockaddr_in server;
-  int derp = 1;
+    data = new Implementation();
+    data->server_fd = -1;
+    data->nconnections = 0;
+    data->buffer = new char[1<<12];
+}
 
-  server_socket_ = socket(AF_INET, SOCK_STREAM, 0);
-  assert(server_socket_ > 0);
-  setsockopt(server_socket_, SOL_SOCKET, SO_REUSEADDR, &derp, sizeof(derp));
+bool Server::construct (uint16_t a_port)
+{
+    int reuseaddr = 1;
+    sockaddr_in server;
 
-  server.sin_family = AF_INET;
-  server.sin_port = htons(a_port);
-  server.sin_addr.s_addr = INADDR_ANY;
+    data->server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (data->server_fd < 0) return false;
 
-  assert(0 == bind(server_socket_, (sockaddr*)&server, sizeof(server)));
-  assert(0 == listen(server_socket_, 10));
+    data->recalc();
 
-  parser_ = new Parser();
+    setsockopt(data->server_fd, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr));
+
+    server.sin_family = AF_INET;
+    server.sin_port = htons(a_port);
+    server.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(data->server_fd, (sockaddr*)&server, sizeof(server)) != 0) return false;
+    if (listen(data->server_fd, 10) != 0) return false;
+    return true;
 }
 
 Server::~Server ()
 {
-  if (server_socket_) {
-    close(server_socket_);
-  }
+    close(data->server_fd);
+    delete[] data->buffer;
+}
 
-  delete parser_;
+bool Server::close (uint32_t a_idx)
+{
+    data->connections[a_idx].close();
+    --data->nconnections;
+    return true;
+}
+
+bool Server::accept ()
+{
+    if (data->nconnections == Implementation::MAX_CONNECTIONS) {
+        return true;
+    }
+
+    int fd = ::accept(data->server_fd, NULL, NULL);
+    if (fd < 0) {
+        return false;
+    }
+
+    for (uint32_t i = 0; i < Implementation::MAX_CONNECTIONS; ++i) {
+        if (!data->connections[i].in_use()) {
+            //printf("pos %d\n", i);
+            data->connections[i].fd = fd;
+            data->connections[i].response.set_socket(fd);
+            ++data->nconnections;
+            if (fd > data->maxfd) data->maxfd = fd;
+            break;
+        }
+    }
+
+    return true;
 }
 
 bool Server::begin (Request*& a_request, Response*& a_response)
+{ // TODO(hpeixoto): this should go into a C file or something.
+    a_request = NULL;
+    a_response = NULL;
+
+    for (uint32_t i = 0; i < Implementation::MAX_CONNECTIONS; ++i) {
+        if (data->connections[i].parser.pop_request(a_request)) {
+            a_response = &data->connections[i].response;
+            return true;
+        }
+    }
+
+
+    fd_set fds;
+
+    FD_ZERO(&fds);
+    FD_SET(data->server_fd, &fds);
+    for (uint32_t i = 0; i < Implementation::MAX_CONNECTIONS; ++i) {
+        if (data->connections[i].in_use()) {
+          FD_SET(data->connections[i].fd, &fds);
+          }
+    }
+
+    int active = select(data->maxfd + 1, &fds, NULL, NULL, NULL);
+
+    if (active < 0) {
+        return false;
+    }
+
+    if (FD_ISSET(data->server_fd, &fds)) {
+        if (!accept()) {
+            return false;
+        }
+    }
+
+    for (uint32_t i = 0; i < Implementation::MAX_CONNECTIONS; ++i) {
+        if (data->connections[i].in_use()) {
+            if (FD_ISSET(data->connections[i].fd, &fds)) {
+                receive(i);
+            }
+        }
+    }
+
+    return true;
+}
+
+bool Server::receive (uint32_t a_idx)
 {
-  char buffer[4096];
-  int received;
-  int client_socket;
+    int received = recv(data->connections[a_idx].fd, data->buffer, 1<<12, 0);
+    //printf("received %d bytes\n", received);
 
-  a_request = NULL;
-  a_response = NULL;
-  
-  client_socket = accept(server_socket_, NULL, NULL);
-  if (client_socket < 0) {
-    close(server_socket_);
-    server_socket_ = 0;
-    return false;
-  }
-
-  while (true) {
-    // Not really a select loop
-    // oh we've got a read event on client_socket wowie
-
-    received = recv(client_socket, buffer, sizeof(buffer), 0);
-    if (received < 0) {
-      close(client_socket);
-      return true;
+    if (received <= 0) {
+        close(a_idx);
+        return true;
     }
 
-    if (parser_->feed(buffer, received) == false) {
-      close(client_socket);
-      return true;
+    if (data->connections[a_idx].parser.feed(data->buffer, received) == false) {
+        printf("false parsing\n");
+        close(a_idx);
+        return true;
     }
 
-    if (parser_->pop_request(a_request)) {
-      a_response = new Response();
-      a_response->set_socket(client_socket);
-      return true;
-    }
-  }
-
-  return true;
+    return true;
 }
 
 bool Server::end (Request*& a_request, Response*& a_response)
 {
-  close(a_response->socket());
-  delete a_response;
-  return true;
+    for (uint32_t i = 0; i < Implementation::MAX_CONNECTIONS; ++i) {
+        if (data->connections[i].fd == a_response->socket()) {
+            close(i);
+            break;
+        }
+    }
+    return true;
 }
 

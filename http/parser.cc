@@ -4,7 +4,7 @@
 
 #include "http_parser.h"
 
-#include <boost/regex.hpp>
+#include <string.h>
 
 using kiwi::http::Parser;
 
@@ -92,17 +92,40 @@ Parser::Parser ()
 
   http_parser_init(PARSER(), HTTP_REQUEST);
   PARSER()->data = this;
+
+  header_buffer_ = new char[2<<12];
+  header_buffer_used_ = 0;
+  header_buffer_size_ = 2<<12;
 }
 
 Parser::~Parser ()
 {
   delete PARSER();
   delete SETTINGS();
+  delete[] header_buffer_;
+}
+
+void Parser::reset ()
+{
+  http_parser_init(PARSER(), HTTP_REQUEST);
 }
 
 bool Parser::feed (const char* a_buffer, size_t a_size)
 {
-  return http_parser_execute(PARSER(), SETTINGS(), a_buffer, a_size) == a_size;
+  size_t read = http_parser_execute(PARSER(), SETTINGS(), a_buffer, a_size);
+  return read == a_size;
+
+  enum http_errno err = HTTP_PARSER_ERRNO(PARSER());
+
+  if (err != 0) {
+      printf("error %d: %s (%s)\n", err, http_errno_name(err), http_errno_description(err));
+      return false;
+  }
+
+  printf("read %zd of %zd\n", read, a_size);
+  return true;
+  
+  return read == a_size;
 }
 
 bool Parser::pop_request (Request*& a_request)
@@ -126,11 +149,13 @@ kiwi::http::Request& Parser::current_request ()
 int Parser::on_message_begin ()
 {
   if (total_requests_ == 10) {
+    printf("overflow\n");
     return -1;
   }
 
   ++total_requests_;
   current_request().clear();
+  header_buffer_used_ = 0;
   return 0;
 }
 
@@ -147,6 +172,7 @@ int Parser::on_message_complete ()
       }
     }
 
+    current_request().set_body(buffer_);
     buffer_.resize(0);
   }
 
@@ -156,8 +182,12 @@ int Parser::on_message_complete ()
 
 int Parser::on_headers_complete ()
 {
+  add_header();
+
   // extract query string from URL
   current_request().uri().assign(extract_query_string(current_request().uri(), current_request().params));
+
+  current_request().set_keepalive(http_should_keep_alive(PARSER()));
 
   switch(PARSER()->method) {
     case HTTP_GET:
@@ -188,6 +218,10 @@ int Parser::on_url (const char* a_buffer, size_t a_length)
 
 int Parser::on_header_field (const char* a_buffer, size_t a_length)
 {
+  /*if (a_length + header_buffer_used_ <= header_buffer_size_) {
+    memcpy(header_buffer_ + header_buffer_used_, a_buffer, a_length);
+    header_buffer_used_ += a_length;
+  }*/
   add_header();
   header_field_.append(a_buffer, a_length);
   return 0;
@@ -195,14 +229,16 @@ int Parser::on_header_field (const char* a_buffer, size_t a_length)
 
 int Parser::on_header_value (const char* a_buffer, size_t a_length)
 {
+  /*if (a_length + header_buffer_used_ <= header_buffer_size_) {
+    memcpy(header_buffer_ + header_buffer_used_, a_buffer, a_length);
+    header_buffer_used_ += a_length;
+  }*/
   header_value_.append(a_buffer, a_length);
   return 0;
 }
 
 int Parser::on_body (const char* a_buffer, size_t a_length)
 {
-  add_header();
-
   buffer_.append(a_buffer, a_length);
   return 0;
 }
@@ -211,7 +247,7 @@ void Parser::add_header ()
 {
   if (header_value_.size() > 0) {
     current_request().headers[header_field_] = header_value_;
-    printf("%s ===> %s\n", header_field_.c_str(), header_value_.c_str());
+    // printf("%s ===> %s\n", header_field_.c_str(), header_value_.c_str());
     header_field_.resize(0);
     header_value_.resize(0);
   }
@@ -241,16 +277,17 @@ std::string extract_query_string (
     const std::string& a_uri,
     std::map<std::string, std::string>& a_params)
 {
-  static const boost::regex qse_re("^(?<ABS_PATH>[^?]*)(\\?(?<QS>.*))?$");
-  boost::match_results<std::string::const_iterator> results;
-  boost::regex_match(a_uri, results, qse_re);
-  
-  boost::sub_match<std::string::const_iterator> qs_match = results["QS"];
-  if (qs_match.matched) {
-    extract_params(qs_match.str(), a_params);
+  uint32_t abs_path = 0;
+  for (; abs_path < a_uri.size(); ++abs_path) {
+    if (a_uri[abs_path] == '?')
+    break;
   }
 
-  return results["ABS_PATH"].str();
+  if (abs_path != a_uri.size()) {
+    extract_params(a_uri.substr(abs_path), a_params);
+  }
+
+  return a_uri.substr(0, abs_path);
 }
 
 void extract_params(const std::string& a_urlencoded, std::map<std::string, std::string>& a_params)
