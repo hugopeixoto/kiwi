@@ -1,17 +1,17 @@
 LIBRARY=bin/libkiwi.a
 ECC=bin/ecc
 
-CXXFLAGS=-std=c++0x -I . -I ../http-parser -g #-stdlib=libc++
+CXXFLAGS=-std=c++0x -I . -I ../http-parser -g
 
 HTTP_SRCS=http/server.cc http/request.cc http/response.cc http/parser.cc ../http-parser/http_parser.c
-
 ROUTING_SRCS=routing/base.cc routing/rule.cc
 CONTROLLER_SRCS=controller/base.cc
+
 AR_GEN_SRCS=activerecord/base.cc activerecord/iterator.cc activerecord/connection.cc
 AR_PG_SRCS=activerecord/postgresql/connection.cc activerecord/postgresql/iterator.cc
 AR_SRCS=$(AR_GEN_SRCS) $(AR_PG_SRCS)
 
-OTHER_SRCS=helpers/core.cc application/base.cc controller/engine.cc view/base.cc view/parameters.cc model/attribute.cc $(AR_SRCS)
+OTHER_SRCS=helpers/core.cc application/base.cc view/base.cc view/parameters.cc model/attribute.cc $(AR_SRCS)
 
 SRCS=$(HTTP_SRCS) $(ROUTING_SRCS) $(CONTROLLER_SRCS)
 CC=c++
