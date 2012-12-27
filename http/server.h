@@ -6,7 +6,6 @@
 
 namespace kiwi {
   namespace http {
-    class Parser;
     class Request;
     class Response;
 
@@ -15,9 +14,11 @@ namespace kiwi {
       /**
        * @brief Initializes the server on the given port.
        */
-      Server (uint16_t a_port);
+      Server ();
 
       virtual ~Server ();
+
+      bool construct (uint16_t a_port);
 
       /**
        * @brief Blocks until there is a request to serve, or the server fails.
@@ -31,8 +32,17 @@ namespace kiwi {
       bool end (Request*& a_request, Response*& a_response);
 
       protected:
-      int server_socket_; //!< file descriptor of the listener socket.
-      Parser* parser_;
+      bool accept ();
+      bool receive (uint32_t a_idx);
+      bool close (uint32_t a_idx);
+
+      protected:
+      /**
+       * @brief Opaque structure.
+       */
+      struct Implementation;
+
+      Implementation* data; //!< Opaque pointer.
     };
   }
 }

@@ -21,6 +21,8 @@ namespace kiwi {
 
       bool pop_request (Request*& a_request);
 
+      void reset ();
+
       static std::string percent_decode (const std::string& a_string);
 
       /**
@@ -57,6 +59,11 @@ namespace kiwi {
 
       http_parser_settings_ptr settings_;
       http_parser_ptr parser_;
+
+      protected:
+      char* header_buffer_;
+      uint32_t header_buffer_used_;
+      uint32_t header_buffer_size_;
     };
   }
 }
