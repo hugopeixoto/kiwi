@@ -1,7 +1,5 @@
 
 #include "routing/base.h"
-#include "routing/match.h"
-#include "http/method.h"
 
 #include <boost/regex.hpp>
 #include <iomanip>
@@ -18,7 +16,7 @@ using kiwi::routing::RouteResult;
 //}
 
 RouteResult Base::recognize_path (
-    const http::Method& a_method,
+    const Method& a_method,
     const std::string& a_uri)
 {
     RouteResult result;

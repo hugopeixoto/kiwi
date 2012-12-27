@@ -6,7 +6,7 @@
 #include <list>
 #include <map>
 #include "routing/rule.h"
-#include "http/method.h"
+#include "routing/method.h"
 
 namespace kiwi {
   namespace routing {
@@ -52,7 +52,7 @@ namespace kiwi {
        */
       template<typename Controller>
       Base& map (
-        const http::Method& a_method,
+        const Method& a_method,
         const std::string& a_match,
         void (Controller::*a_action)(void));
 
@@ -63,16 +63,16 @@ namespace kiwi {
        * If they do, the return object is filled with the match result.
        */
       RouteResult recognize_path (
-        const http::Method& a_method,
+        const Method& a_method,
         const std::string& a_uri);
 
       protected:
-      std::map<http::Method, RuleList> rules_; //!< List of rules. To be replaced with a magic automata.
+      std::map<Method, RuleList> rules_; //!< List of rules. To be replaced with a magic automata.
     };
 
     template<typename Controller>
     Base& Base::map (
-      const http::Method& a_method,
+      const Method& a_method,
       const std::string& a_match,
       void (Controller::*a_action)(void))
     {
@@ -87,7 +87,7 @@ namespace kiwi {
     template<typename Controller>
     Base& Base::root (void (Controller::*a_action)(void))
     {
-        return map(http::Method::GET, "/", a_action);
+        return map(Method::GET, "/", a_action);
     }
 
     template<typename Controller>
@@ -96,11 +96,11 @@ namespace kiwi {
         std::string resource = a_plural_resource_name;
 
         return
-            map(http::Method::GET, "/" + resource, &Controller::index).
-            map(http::Method::POST, "/" + resource, &Controller::create).
-            map(http::Method::PUT, "/" + resource + "/:id", &Controller::update).
-            map(http::Method::DELETE, "/" + resource + "/:id", &Controller::destroy).
-            map(http::Method::GET, "/" + resource + "/:id", &Controller::show);
+            map(Method::GET, "/" + resource, &Controller::index).
+            map(Method::POST, "/" + resource, &Controller::create).
+            map(Method::PUT, "/" + resource + "/:id", &Controller::update).
+            map(Method::DELETE, "/" + resource + "/:id", &Controller::destroy).
+            map(Method::GET, "/" + resource + "/:id", &Controller::show);
     }
   }
 }
