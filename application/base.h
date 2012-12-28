@@ -4,11 +4,9 @@
 
 #include <stdint.h>
 
-namespace kiwi { namespace routing { class Base; } }
-namespace kiwi { namespace controller { class Base; } }
-namespace kiwi { namespace controller { class Engine; } }
 
 namespace kiwi {
+  namespace routing { class Base; }
   namespace application {
     class Base {
       public:
@@ -29,14 +27,8 @@ namespace kiwi {
        */
       void set_routing (kiwi::routing::Base* a_routing);
 
-      /**
-       * @brief Adds a controller to the application.
-       */
-      void add_controller (kiwi::controller::Base* a_controller);
-
       protected:
       kiwi::routing::Base* routing_;
-      kiwi::controller::Engine* controller_engine_;
     };
   }
 }

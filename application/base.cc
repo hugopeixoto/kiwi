@@ -1,23 +1,33 @@
 
 #include "application/base.h"
-#include "controller/engine.h"
+#include "controller/data.h"
 
 #include "http/server.h"
 #include "http/request.h"
 #include "http/response.h"
 
-#include "routing/match.h"
 #include "routing/base.h"
+
+static kiwi::routing::Method http2routing (const kiwi::http::Method a_method)
+{
+  static kiwi::routing::Method methods[] = {
+    kiwi::routing::Method::GET,
+    kiwi::routing::Method::POST,
+    kiwi::routing::Method::PUT,
+    kiwi::routing::Method::DELETE,
+    kiwi::routing::Method::HEAD
+  };
+
+  return methods[static_cast<uint32_t>(a_method)];
+}
 
 kiwi::application::Base::Base ()
 {
   routing_ = NULL;
-  controller_engine_ = new kiwi::controller::Engine();
 }
 
 kiwi::application::Base::~Base ()
 {
-  delete controller_engine_;
   delete routing_;
 }
 
@@ -26,43 +36,31 @@ void kiwi::application::Base::set_routing (kiwi::routing::Base* a_routing)
   routing_ = a_routing;
 }
 
-void kiwi::application::Base::add_controller (kiwi::controller::Base* a_controller)
-{
-  controller_engine_->add(a_controller);
-}
-
 void kiwi::application::Base::run (uint16_t a_port)
 {
   http::Request*  request;
   http::Response* response;
-  http::Server    server(a_port);
+  http::Server    server;
+  kiwi::controller::Data data;
+
+  server.construct(a_port);
 
   while (server.begin(request, response) == true) {
     if (request && response) {
-      routing::Match routing_match;
       fprintf(stderr, "------------------------------------------\n");
       fprintf(stderr, ":::::::::::::: Got Request (%s)\n", request->uri().c_str());
 
-      if (routing_->match(request->method(), request->uri(), routing_match) == false) { 
+      routing::RouteResult route = routing_->recognize_path(
+          http2routing(request->method()),
+          request->uri());
+
+      if (!route) {
         fprintf(stderr, "Routing error\n");
       } else {
-        printf(
-          ":::::::::::::: Routing (%s / %s)\n",
-          routing_match.controller.c_str(),
-          routing_match.action.c_str());
-
-        for (std::map<std::string, std::string>::const_iterator it = routing_match.parameters.begin(); it != routing_match.parameters.end(); ++it) {
-          printf("::: QS [%s]=[%s]\n", it->first.c_str(), it->second.c_str());
-        }
-
-        if (controller_engine_->execute(
-              *request,
-              *response,
-              routing_match.controller,
-              routing_match.action,
-              routing_match.parameters) == false) {
-          printf("Controller/action missing\n");
-        }
+        data.request = request;
+        data.response = response;
+        // data.url_params ?
+        route.action(&data);
       }
 
       printf("------------------------------------------\n");
