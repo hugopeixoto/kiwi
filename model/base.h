@@ -110,6 +110,7 @@ namespace kiwi {
 
         bool update ()
         {
+        #if 0
           attributes_with_values = arel_attributes_values(false, false, attribute_names)
           return 0 if attributes_with_values.empty?
           klass = self.class
@@ -121,6 +122,7 @@ namespace kiwi {
           for (const auto& column : columns_) {
 
           }
+          #endif
 
           // UpdateManager
           return true;
